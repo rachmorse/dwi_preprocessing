@@ -32,6 +32,23 @@ DTI_APPA_FILE='alldirections_APPA'
 FOLDER=$FOLDER_OUT/${SUBJECT}_${SES}
 mkdir $FOLDER -p
 
+# Create BIDS compliant dataset_description.json
+cat <<EOF > ${FOLDER}/dataset_description.json
+{
+  "Name": "dMRI Preprocessing Output",
+  "BIDSVersion": "1.10.1",
+  "PipelineDescription": {
+    "Name": "dMRI Preprocessing Pipeline",
+    "Version": "1.1",
+    "Software": [
+      {
+        "Name": "FSL",
+        "Version": "6.0.4"
+      }
+    ]
+  }
+}
+EOF
 
 if [ ! -d $FOLDER_IN ]; then
     mkdir $FOLDER_IN -p
