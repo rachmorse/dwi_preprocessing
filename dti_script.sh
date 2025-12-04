@@ -8,13 +8,19 @@
 export FSLSUB_PARALLEL=4
 
 SUBJECT=$1
-FOLDER_OUT='/psiquiatria/home/oriol/Desktop/DWI_preproc'
+
+if [ -z "$SUBJECT" ]; then
+    echo "Error: No subject ID provided. Usage: $0 <subject_id>"
+    exit 1
+fi
+FOLDER_OUT='/home/rachel/Desktop/dwi_preprocessing/dwi_preprocessing_test'
 SES='ses-02' # edit session number
 
 # Variables
-FOLDER_IN=${FOLDER_OUT}/${SUBJECT}_${SES}/dwi
-FOLDER_IN_REF=${FOLDER_OUT}/${SUBJECT}_${SES}/fmap
-FOLDER_IN_T1=${FOLDER_OUT}/${SUBJECT}_${SES}/anat
+BIDS_DIR='/pool/guttmann/institut/UB/Superagers/MRI/BIDS'
+FOLDER_IN=${BIDS_DIR}/${SUBJECT}/${SES}/dwi
+FOLDER_IN_REF=${BIDS_DIR}/${SUBJECT}/${SES}/fmap
+FOLDER_IN_T1=${BIDS_DIR}/${SUBJECT}/${SES}/anat
 DTI_REF_AP_FILE=${FOLDER_IN_REF}/${SUBJECT}_${SES}_acq-dwisefm_dir-ap_run-01_epi.nii.gz
 DTI_REF_PA_FILE=${FOLDER_IN_REF}/${SUBJECT}_${SES}_acq-dwisefm_dir-pa_run-01_epi.nii.gz
 DTI_AP_FILE=${FOLDER_IN}/${SUBJECT}_${SES}_dir-ap_run-01_dwi.nii.gz 		
@@ -33,59 +39,27 @@ FOLDER=$FOLDER_OUT/${SUBJECT}_${SES}
 mkdir $FOLDER -p
 
 # Create BIDS compliant dataset_description.json
-cat <<EOF > ${FOLDER}/dataset_description.json
+fsl_version=$(cat "${FSLDIR}/etc/fslversion" 2>/dev/null || echo "unknown")
+hostname=$(hostname)
+cat <<EOF > /dataset_description_${date}.json
 {
-  "Name": "dMRI Preprocessing Output",
+  "Name": "dMRI Preprocessing Output ${date}",
   "BIDSVersion": "1.10.1",
   "PipelineDescription": {
     "Name": "dMRI Preprocessing Pipeline",
     "Version": "1.1",
+    "RunOnMachine": "${hostname}",
     "Software": [
       {
         "Name": "FSL",
-        "Version": "6.0.4"
+        "Version": "${fsl_version}"
       }
     ]
   }
 }
 EOF
 
-if [ ! -d $FOLDER_IN ]; then
-    mkdir $FOLDER_IN -p
-fi
-if [ ! -d $FOLDER_IN_REF ]; then
-    mkdir $FOLDER_IN_REF -p
-fi
-if [ ! -d $FOLDER_IN_T1 ]; then
-    mkdir $FOLDER_IN_T1 -p
-fi
-if [ ! -f $DTI_REF_AP_FILE ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/fmap/${SUBJECT}_${SES}_acq-dwisefm_dir-ap_run-01_epi.nii.gz $DTI_REF_AP_FILE
-fi
-if [ ! -f $DTI_REF_PA_FILE ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/fmap/${SUBJECT}_${SES}_acq-dwisefm_dir-pa_run-01_epi.nii.gz $DTI_REF_PA_FILE
-fi
-if [ ! -f $DTI_AP_FILE ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/dwi/${SUBJECT}_${SES}_dir-ap_run-01_dwi.nii.gz $DTI_AP_FILE
-fi
-if [ ! -f $DTI_PA_FILE ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/dwi/${SUBJECT}_${SES}_dir-pa_run-01_dwi.nii.gz $DTI_PA_FILE
-fi
-if [ ! -f $BVAL_AP ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/dwi/${SUBJECT}_${SES}_dir-ap_run-01_dwi.bval $BVAL_AP
-fi
-if [ ! -f $BVAL_PA ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/dwi/${SUBJECT}_${SES}_dir-pa_run-01_dwi.bval $BVAL_PA
-fi
-if [ ! -f $BVEC_AP ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/dwi/${SUBJECT}_${SES}_dir-ap_run-01_dwi.bvec $BVEC_AP
-fi
-if [ ! -f $BVEC_PA ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/dwi/${SUBJECT}_${SES}_dir-pa_run-01_dwi.bvec $BVEC_PA
-fi
-if [ ! -f $T1 ]; then
-    scp oriol@161.116.166.234:/pool/guttmann/institut/UB/Superagers/MRI/BIDS/${SUBJECT}/${SES}/anat/${SUBJECT}_${SES}_run-01_T1w.nii.gz $T1
-fi
+# Input files are read directly from BIDS_DIR
 
 # For topup and eddycurrent fsl algorithms: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy
 
@@ -137,11 +111,3 @@ fslmaths ${FOLDER}/T1w_brain_mask_dMRIres -dilD -kernel 3D ${FOLDER}/T1w_brain_m
 # Run dtifit
 echo 'DTI fit'
 dtifit -k ${FOLDER}/eddy_corrected_data -o ${FOLDER}/dti_fit_data -m ${FOLDER}/T1w_brain_mask_dMRIres_exp -r ${FOLDER}/eddy_corrected_data.eddy_rotated_bvecs -b ${FOLDER}/BVAL_concat_APPA.bval
-
-if [ -f ${FOLDER}/T1w_brain_mask_dMRIres_exp.nii.gz ]; then
-
-    rm -r $FOLDER_IN
-    rm -r $FOLDER_IN_REF
-    rm -r $FOLDER_IN_T1
-
-fi
