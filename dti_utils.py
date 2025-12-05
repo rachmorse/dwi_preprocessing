@@ -261,12 +261,8 @@ def create_dataset_description(output_dir, fsl_dir, successful_subjects):
     except FileNotFoundError:
         fsl_version = "unknown"
         
-    hostname = socket.gethostname()
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    try:
-        user = os.getlogin()
-    except OSError:
-        user = "unknown"
+    user = os.environ.get("USER") or os.environ.get("LOGNAME") or "unknown"
     
     dataset_description = {
         "Name": f"dMRI Preprocessing Output {date_str}",
@@ -274,7 +270,7 @@ def create_dataset_description(output_dir, fsl_dir, successful_subjects):
         "PipelineDescription": {
             "Name": "dMRI Preprocessing Pipeline",
             "Version": "1.1",
-            "RunOnMachine": hostname,
+            "RunOnMachine": "Cluster",
             "RunByUser": user,
             "Software": [
                 {
