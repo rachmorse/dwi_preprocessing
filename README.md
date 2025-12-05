@@ -1,5 +1,5 @@
 ### Diffusion Weighted Imaging (DWI) Preprocessing
-- **Purpose:** Runs preprocessing of DWI data using FSL’s topup, eddy, and dtifit, including file retrieval, distortion correction, motion correction, and tensor fitting.
-- **Scripts:**     
-    - `dwi_script.sh`: Processes a single subject’s DWI data.
-    - `batch_dwi_script.sh`: SLURM job script to run `dwi_script.sh` in parallel for multiple subjects.
+- **Purpose:** This pipeline automates the preprocessing of DWI data, handling remote subject list generation, remote data retrieval, and submission of SLURM jobs for parallel processing. It performs distortion correction using FSL's topup and eddy, creates brain masks, and fits diffusion tensors using dtifit.
+- **Scripts:**
+    - `dti_processing.py`: The core processing script for a single subject. It orchestrates the preparation of topup files (merging SBREF AP-PA), runs `topup` for susceptibility distortion correction, prepares and runs `eddy` for eddy current and motion correction, generates brain masks from T1 images, and finally runs `dtifit` to fit the diffusion tensor model.
+    - `dti_utils.py`: A utility library supporting the pipeline. It handles interactions with remote and local BIDS directories (scanning for subjects, fetching files via SCP if remote), manages FSL environment setup, creates BIDS-compliant `dataset_description.json` files, and contains the logic for submitting SLURM job arrays to process multiple subjects.
