@@ -4,6 +4,7 @@ import logging
 import argparse
 import datetime
 import dti_utils
+import shutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -182,7 +183,7 @@ def process_subject(args):
         t1 = os.path.join(folder_in_t1, f"{subject}_{session}_run-01_T1w.nii.gz")
         
         # Create output folder
-        folder = os.path.join(output_dir, f"temp_institut/{subject}_{session}")
+        folder = os.path.join(output_dir, f"{subject}_{session}")
         os.makedirs(folder, exist_ok=True)
         
         # Create temp input folder if fetching from remote
@@ -276,16 +277,17 @@ def main():
 
     # Configuration 
     BIDS_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/BIDS'
-    SESSION = 'ses-02'
+    SESSION = 'ses-01'
     TIMEPOINT = int(SESSION.split('-')[1])    
-    SHARED_OUTPUT_DIR = f'/pool/guttmann/institut/UB/Superagers/MRI/DTIFIT_TP{TIMEPOINT}'
-    OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_test/test_fsl_6_0_4_output'
-    FSL_DIR = f'{OUTPUT_DIR}/fsl'
+    # OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_test/test_fsl_5_0_11_output'
+    OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_6_0_4/'
+    FSL_DIR = f'/global/software/fsl_6_0_4'
+    # FSL_DIR = f'/psiquiatria/home/oriol/Desktop/dwi_preprocessing_test/test_fsl_5_0_11_output/fsl' # Uncomment for fsl 5.0.11
     REMOTE_HOST = 'oriol@161.116.166.234'
     FORCE_REMOTE = True # Set to True to always fetch remote files
     # NOTE that the total cores used is MAX_PARALLEL_JOBS * N_PROCS
     N_PROCS = 4 # CPUs per task in SLURM
-    MAX_PARALLEL_JOBS = 1 # Limit number of simultaneous jobs
+    MAX_PARALLEL_JOBS = 9 # Limit number of simultaneous jobs
     
     # Ensure output directory exists
     print(OUTPUT_DIR)
@@ -360,9 +362,8 @@ def main():
             logger.info(f"Reporting: {len(successful_subjects)}/{len(subjects)} subjects successful.")
             dti_utils.create_dataset_description(OUTPUT_DIR, FSL_DIR, successful_subjects)
             
-            # Optional: Cleanup marker dir
-            # import shutil
-            # shutil.rmtree(marker_dir)
+            # Cleanup marker dir
+            shutil.rmtree(marker_dir)
             
         except Exception as e:
             logger.error(f"Report failed: {e}")
