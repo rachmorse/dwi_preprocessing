@@ -245,7 +245,11 @@ def process_subject(args):
         prepare_eddy_files(folder, dti_ap_file, dti_pa_file, dti_appa_file, bvec_ap, bvec_pa, bval_ap, bval_pa, env)
         
         logger.info(f"[{subject}] Running eddy")
-        run_eddy(folder, dti_appa_file, env)
+        try:
+            run_eddy(folder, dti_appa_file, env)
+        except Exception:
+            logger.warning(f"[{subject}] Eddy failed. This might be because the data has fewer volumes than the expected 100 per direction. Check if the sub has two runs.")
+            raise
         
         logger.info(f"[{subject}] Processing T1 mask")
         process_t1_mask(folder, t1, env)
@@ -287,7 +291,7 @@ def main():
     FORCE_REMOTE = True # Set to True to always fetch remote files
     # NOTE that the total cores used is MAX_PARALLEL_JOBS * N_PROCS
     N_PROCS = 4 # CPUs per task in SLURM
-    MAX_PARALLEL_JOBS = 9 # Limit number of simultaneous jobs
+    MAX_PARALLEL_JOBS = 3 # Limit number of simultaneous jobs
     
     # Ensure output directory exists
     print(OUTPUT_DIR)
@@ -374,8 +378,8 @@ def main():
         subjects = dti_utils.get_subjects_to_process(BIDS_DIR, OUTPUT_DIR, SESSION, remote_host=REMOTE_HOST)
 
         # Optionally set a specific list of subs for processing
-        # subjects = ['sub-1014'] 
-            
+        # subjects = ["sub-4057", "sub-4144"] 
+
         if not subjects:
             logger.info("No subjects found to process.")
             sys.exit(0)
