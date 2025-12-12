@@ -281,10 +281,10 @@ def main():
 
     # Configuration 
     BIDS_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/BIDS'
-    SESSION = 'ses-01'
+    SESSION = 'ses-02'
     TIMEPOINT = int(SESSION.split('-')[1])    
-    # OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_test/test_fsl_5_0_11_output'
     OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_6_0_4/'
+    SHARED_OUTPUT_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/DTIFIT_TP2'
     FSL_DIR = f'/global/software/fsl_6_0_4'
     # FSL_DIR = f'/psiquiatria/home/oriol/Desktop/dwi_preprocessing_test/test_fsl_5_0_11_output/fsl' # Uncomment for fsl 5.0.11
     REMOTE_HOST = 'oriol@161.116.166.234'
@@ -369,17 +369,37 @@ def main():
             # Cleanup marker dir
             shutil.rmtree(marker_dir)
             
+            # Cleanup submission files
+            try:
+                basename = os.path.basename(args.subjects_list)
+                if basename.startswith("subjects_to_process_") and basename.endswith(".txt"):
+                    timestamp = basename[len("subjects_to_process_"):-4]
+                    
+                    submit_report_file = f"submit_report_{timestamp}.sh"
+                    submit_array_file = f"submit_array_{timestamp}.sh"
+                    
+                    if os.path.exists(submit_report_file):
+                        os.remove(submit_report_file)
+                        
+                    if os.path.exists(submit_array_file):
+                        os.remove(submit_array_file)
+                        
+                    if os.path.exists(args.subjects_list):
+                        os.remove(args.subjects_list)
+            except Exception as e:
+                logger.warning(f"Failed to cleanup submission files: {e}")
+            
         except Exception as e:
             logger.error(f"Report failed: {e}")
             sys.exit(1)
 
     else:
         # SUBMITTER MODE - submits the SLURM workflow
-        subjects = dti_utils.get_subjects_to_process(BIDS_DIR, OUTPUT_DIR, SESSION, remote_host=REMOTE_HOST)
+        subjects = dti_utils.get_subjects_to_process(BIDS_DIR, SHARED_OUTPUT_DIR, SESSION, remote_host=REMOTE_HOST)
 
         # Optionally set a specific list of subs for processing
-        # subjects = ["sub-4057", "sub-4144"] 
-
+        # subjects = ["sub-4028", "sub-4027"] 
+            
         if not subjects:
             logger.info("No subjects found to process.")
             sys.exit(0)
