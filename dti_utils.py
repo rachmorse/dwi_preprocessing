@@ -246,13 +246,14 @@ def ensure_remote_file(local_path, remote_host, remote_path, force=False):
             logger.error(f"Failed to fetch {local_path}: {e}")
 
 
-def create_dataset_description(output_dir, fsl_dir, successful_subjects):
+def create_dataset_description(output_dir, fsl_dir, successful_subjects, ses):
     """Creates BIDS compliant dataset_description.json.
     
     Args:
         output_dir (str): Path to the output directory.
         fsl_dir (str): Path to the FSL installation directory.
         successful_subjects (list): List of successfully processed subject IDs.
+        ses (str): Session identifier.
     """
     try:
         fsl_version_file = os.path.join(fsl_dir, "etc", "fslversion")
@@ -261,7 +262,7 @@ def create_dataset_description(output_dir, fsl_dir, successful_subjects):
     except FileNotFoundError:
         fsl_version = "unknown"
         
-    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    date_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     user = os.environ.get("USER") or os.environ.get("LOGNAME") or "unknown"
     
     dataset_description = {
@@ -279,6 +280,7 @@ def create_dataset_description(output_dir, fsl_dir, successful_subjects):
                 }
             ],
             "SubjectsProcessed": successful_subjects,
+            "Session": ses,
         }
     }
     
