@@ -280,18 +280,31 @@ def main():
     args = parser.parse_args()
 
     # Configuration 
-    BIDS_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/BIDS'
-    SESSION = 'ses-02'
+    COHORT = 'bbhi senior'
+    SESSION = 'ses-01'
     TIMEPOINT = int(SESSION.split('-')[1])    
-    OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_6_0_4/'
-    SHARED_OUTPUT_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/DTIFIT_TP2'
+
+    if COHORT == 'bbhi':
+        BIDS_DIR = '/pool/guttmann/institut/BBHI/MRI/BIDS'
+        OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_6_0_4/bbhi'
+        if SESSION == 'ses-01':
+            SHARED_OUTPUT_DIR = '/pool/guttmann/institut/BBHI/MRI/processed_data/dtifit_ses-01_fsl-604'
+        else:
+            SHARED_OUTPUT_DIR = '/pool/guttmann/institut/BBHI/MRI/processed_data/dtifit_ses-02_fsl-604'
+    else:
+        BIDS_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/BIDS'
+        OUTPUT_DIR = '/psiquiatria/home/oriol/Desktop/dwi_preprocessing_6_0_4/bbhi_senior'
+        if SESSION == 'ses-01':
+            SHARED_OUTPUT_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/dtifit_ses-01_fsl-604'
+        else:
+            SHARED_OUTPUT_DIR = '/pool/guttmann/institut/UB/Superagers/MRI/dtifit_ses-02_fsl-604'
+    
     FSL_DIR = f'/global/software/fsl_6_0_4'
-    # FSL_DIR = f'/psiquiatria/home/oriol/Desktop/dwi_preprocessing_test/test_fsl_5_0_11_output/fsl' # Uncomment for fsl 5.0.11
     REMOTE_HOST = 'oriol@161.116.166.234'
     FORCE_REMOTE = True # Set to True to always fetch remote files
     # NOTE that the total cores used is MAX_PARALLEL_JOBS * N_PROCS
     N_PROCS = 4 # CPUs per task in SLURM
-    MAX_PARALLEL_JOBS = 3 # Limit number of simultaneous jobs
+    MAX_PARALLEL_JOBS = 9 # Limit number of simultaneous jobs
     
     # Ensure output directory exists
     print(OUTPUT_DIR)
@@ -364,7 +377,7 @@ def main():
                     successful_subjects.append(sub)
             
             logger.info(f"Reporting: {len(successful_subjects)}/{len(subjects)} subjects successful.")
-            dti_utils.create_dataset_description(OUTPUT_DIR, FSL_DIR, successful_subjects)
+            dti_utils.create_dataset_description(OUTPUT_DIR, FSL_DIR, successful_subjects, SESSION)
             
             # Cleanup marker dir
             shutil.rmtree(marker_dir)
@@ -398,8 +411,8 @@ def main():
         subjects = dti_utils.get_subjects_to_process(BIDS_DIR, SHARED_OUTPUT_DIR, SESSION, remote_host=REMOTE_HOST)
 
         # Optionally set a specific list of subs for processing
-        # subjects = ["sub-4028", "sub-4027"] 
-            
+        # subjects = ["sub-3010", "sub-3018", "sub-3035", "sub-2003"]
+
         if not subjects:
             logger.info("No subjects found to process.")
             sys.exit(0)
